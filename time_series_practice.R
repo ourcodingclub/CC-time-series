@@ -18,8 +18,9 @@ austres <- datasets::austres
 milk <- read.csv("monthly_milk.csv", stringsAsFactors = FALSE)
 colnames(milk)[colnames(milk) == 'Monthly.milk.production..pounds.per.cow..Jan.62...Dec.75'] <- 'milk_prod'
 milk$Month <- paste(milk$Month,"-01", sep = "")
-milk$Month_time <- paste(milk$Month, "12:20:30")	# Exploring data types ----
+milk$Month_time <- paste(milk$Month, "12:20:30")	
 
+# Exploring data types ----
 # austres
 austres
 typeof(austres)
@@ -50,16 +51,27 @@ milk_df
 
 # Changing a factor to a date / time ----
 milk$Month_date <- as.Date(milk$Month)
+milk$Month_date_test <- as.Date(milk$Month, format = "%Y-%m-%d")
+
 class(milk$Month_date)
+typeof(milk$Month_date)
 milk$Month_date
+
+# POSIXct time and date double
 milk$Month_time_date <- as.POSIXct(milk$Month_time, format = "%Y-%m-%d %H:%M:%S")	
 class(milk$Month_time_date)
 typeof(milk$Month_time_date)
 milk$Month_time_date
 
+# Changing a date format ----
+milk$Month_date_alt <- format(milk$Month_date, format = "%Y/%B/%d")
+class(milk$Month_date_alt)
+head(milk$Month_date_alt)
+milk$Month_date_alt_fix <- as.Date(milk$Month_date_alt, format = "%Y/%B/%d")
+
 # Plotting with ggplot2 ----
 # With `Date` class
-ggplot(milk, aes(x = Month_date, y = milk_prod)) +
+ggplot(milk, aes(x = milk$Month_date, y = milk_prod)) +
 	geom_line() +
 	scale_x_date(date_labels = "%Y", date_breaks = "1 year")	# Specify the label and breaks for x axis, takes `Date` class only	
 
