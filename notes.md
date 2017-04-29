@@ -22,4 +22,10 @@
 		* Cyclic > seasonal length of trend
 	* Can be used to understand the time series better
 	* Can be used to improve forecasting
+
+
+* zoo `rollmean()` function
+
+* Other packages
+	* ggseas
 	* 
