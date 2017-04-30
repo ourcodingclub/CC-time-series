@@ -9,6 +9,45 @@ library(dplyr)
 library(lubridate)
 library(scales)
 library(forecast)	
+library(colortools)
+
+# Functions ----
+# multiplot
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+	require(grid)
+	
+	# Make a list from the ... arguments and plotlist
+	plots <- c(list(...), plotlist)
+	
+	numPlots = length(plots)
+	
+	# If layout is NULL, then use 'cols' to determine layout
+	if (is.null(layout)) {
+		# Make the panel
+		# ncol: Number of columns of plots
+		# nrow: Number of rows needed, calculated from # of cols
+		layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+										 ncol = cols, nrow = ceiling(numPlots/cols))
+	}
+	
+	if (numPlots==1) {
+		print(plots[[1]])
+		
+	} else {
+		# Set up the page
+		grid.newpage()
+		pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+		
+		# Make each plot, in the correct location
+		for (i in 1:numPlots) {
+			# Get the i,j matrix positions of the regions that contain this subplot
+			matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+			
+			print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+																			layout.pos.col = matchidx$col))
+		}
+	}
+}
 
 # Load data ----
 # Quarterly time series, `ts` class
@@ -23,6 +62,14 @@ colnames(milk)[colnames(milk) == 'milk_prod_per_cow_kg'] <- 'milk_prod'
 # milk$month <- paste(milk$month,"-01", sep = "")
 # write.csv(milk, "monthly_milk.csv", row.names = FALSE)
 milk$month_time <- paste(milk$month, "12:20:30")	
+
+# Creating badly formatted date that we can fix
+bad_date <- format(milk$month_date, format = "%d/%b/%Y-%u")
+head(bad_date)
+class(bad_date)
+
+good_date <- as.Date(milk$bad_date, format = "%d/%b/%Y-%u")
+head(good_date)
 
 # Daily time series
 daily_milk <- read.csv("daily_milk.csv", stringsAsFactors = FALSE)
@@ -113,6 +160,8 @@ ggplot(milk, aes(x = month_time_date, y = milk_prod)) +
 class(milk$month_time_date)
 # Decomposition ----
 milk_stl <- stl(milk_ts, s.window = "period")
+milk_decom <- decompose(milk_ts)
+plot(milk_decom)
 class(milk_stl)
 plot(milk_stl)
 monthplot(milk_ts)
@@ -133,7 +182,156 @@ ggplot(milk, aes(x = month_num, y = milk_prod, group = year)) +
 	geom_line(aes(colour = year))
 
 # Forecasting ----
-milk_fc_ets <- ets(milk_ts)
-milk_fc_ets	
-milk_fc_arima <- auto.arima(milk_ts)
-milk_fc_arima
+# Arima
+milk_arima <- auto.arima(milk_ts)
+milk_arima
+typeof(milk_arima)
+class(milk_arima)
+summary(milk_arima)
+plot(milk_arima)
+
+milk_arima_fc <- forecast(milk_arima, h = 50)
+milk_arima_fc
+class(milk_arima_fc)
+plot(milk_arima_fc)
+
+# Exponential smoothing
+milk_ets <- ets(milk_ts)
+milk_ets
+typeof(milk_ets)
+class(milk_ets)
+summary(milk_ets)
+plot(milk_ets)
+
+milk_ets_fc <- forecast(milk_ets, h = 50)
+milk_ets_fc
+class(milk_ets_fc)
+plot(milk_ets_fc)
+
+milk_ets_mmm <- ets(milk_ts, model = "MMM")
+milk_ets_mmm_fc <- forecast(milk_ets_mmm, h = 50)
+plot(milk_ets_mmm_fc)
+
+milk_ets_zzz <- ets(milk_ts, model = "ZZZ")
+milk_ets_zzz_fc <- forecast(milk_ets_zzz, h = 50)
+plot(milk_ets_zzz_fc)
+
+milk_ets_mmm_damped <- ets(milk_ts, model = "MMM", damped = TRUE)
+milk_ets_mmm_damped_fc <- forecast(milk_ets_mmm_damped, h = 50)
+plot(milk_ets_mmm_damped_fc)
+accuracy(milk_ets_mmm_damped_fc)
+
+plot(simulate(milk_ets_mmm))
+plot(fitted(milk_ets_mmm))
+plot(coef(milk_ets_mmm))
+plot(milk_ets)
+
+# Comparing forecasts with ggplot ----
+
+milk_arima_fc_df <- cbind("Month" = rownames(as.data.frame(milk_arima_fc)), as.data.frame(milk_arima_fc))
+names(milk_arima_fc_df) <- gsub(" ", "_", names(milk_arima_fc_df))
+milk_arima_fc_df$Date <- as.Date(paste("01-", milk_arima_fc_df$Month, sep = ""), format = "%d-%b %Y")
+milk_arima_fc_df$Model <- rep("arima")
+
+milk_ets_fc_df <- cbind("Month" = rownames(as.data.frame(milk_ets_fc)), as.data.frame(milk_ets_fc))
+names(milk_ets_fc_df) <- gsub(" ", "_", names(milk_ets_fc_df))
+milk_ets_fc_df$Date <- as.Date(paste("01-", milk_ets_fc_df$Month, sep = ""), format = "%d-%b %Y")
+milk_ets_fc_df$Model <- rep("ets")
+
+milk_ets_mmm_fc_df <- cbind("Month" = rownames(as.data.frame(milk_ets_mmm_fc)), as.data.frame(milk_ets_mmm_fc))
+names(milk_ets_mmm_fc_df) <- gsub(" ", "_", names(milk_ets_mmm_fc_df))
+milk_ets_mmm_fc_df$Date <- as.Date(paste("01-", milk_ets_mmm_fc_df$Month, sep = ""), format = "%d-%b %Y")
+milk_ets_mmm_fc_df$Model <- rep("ets_mmm")
+
+milk_ets_zzz_fc_df <- cbind("Month" = rownames(as.data.frame(milk_ets_zzz_fc)), as.data.frame(milk_ets_zzz_fc))
+names(milk_ets_zzz_fc_df) <- gsub(" ", "_", names(milk_ets_zzz_fc_df))
+milk_ets_zzz_fc_df$Date <- as.Date(paste("01-", milk_ets_zzz_fc_df$Month, sep = ""), format = "%d-%b %Y")
+milk_ets_zzz_fc_df$Model <- rep("ets_zzz")
+
+milk_ets_mmm_damped_fc_df <- cbind("Month" = rownames(as.data.frame(milk_ets_mmm_damped_fc)), as.data.frame(milk_ets_mmm_damped_fc))
+names(milk_ets_mmm_damped_fc_df) <- gsub(" ", "_", names(milk_ets_mmm_damped_fc_df))
+milk_ets_mmm_damped_fc_df$Date <- as.Date(paste("01-", milk_ets_mmm_damped_fc_df$Month, sep = ""), format = "%d-%b %Y")
+milk_ets_mmm_damped_fc_df$Model <- rep("ets_mmm_damped")
+
+forecast_all <- rbind(milk_arima_fc_df, milk_ets_fc_df, milk_ets_mmm_fc_df, milk_ets_zzz_fc_df, milk_ets_mmm_damped_fc_df)
+
+# Define colour palette
+palette <- wheel(color = "#D99741", num = 5)
+
+# forecasts with original data
+ggplot() +
+	geom_line(data = milk, aes(x = month_date, y = milk_prod)) +
+	geom_line(data = milk_arima_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[1]) +
+	geom_line(data = milk_ets_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[2]) +
+	geom_line(data = milk_ets_mmm_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[3]) +
+	geom_line(data = milk_ets_zzz_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[4]) +
+	geom_line(data = milk_ets_mmm_damped_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[5]) +
+	scale_x_date()
+
+ggplot() + 
+	geom_line(data = milk, aes(x = month_date, y = milk_prod)) + 
+	geom_line(data = forecast_all, aes(x = Date, y = Point_Forecast, colour = Model))
+
+# Forecasts only
+ggplot() +
+	geom_line(data = milk_arima_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[1]) +
+	geom_line(data = milk_ets_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[2]) +
+	geom_line(data = milk_ets_mmm_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[3]) +
+	geom_line(data = milk_ets_zzz_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[4]) +
+	geom_line(data = milk_ets_mmm_damped_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[5]) +
+	scale_x_date() + 
+	theme_classic()
+
+# Forecasts only, with 95% CI
+ggplot() +
+	geom_line(data = milk_arima_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[1]) +
+	geom_ribbon(data = milk_arima_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[1], alpha = 0.5) +
+	geom_line(data = milk_ets_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[2]) +
+	geom_ribbon(data = milk_ets_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[2], alpha = 0.5) +
+	geom_line(data = milk_ets_mmm_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[3]) +
+	geom_ribbon(data = milk_ets_mmm_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[3], alpha = 0.5) +
+	geom_line(data = milk_ets_zzz_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[4]) +
+	geom_ribbon(data = milk_ets_zzz_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[4], alpha = 0.5) +
+	geom_line(data = milk_ets_mmm_damped_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[5]) +
+	geom_ribbon(data = milk_ets_mmm_damped_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[5], alpha = 0.5) +
+	scale_x_date() + 
+	theme_classic()
+
+# Forecasts only, 95% CI, Grid
+
+p1 <- ggplot() +
+	geom_line(data = milk_arima_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[1]) +
+	geom_ribbon(data = milk_arima_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[1], alpha = 0.5) +
+	scale_x_date() + 
+	scale_y_continuous(limits = c(300, 500)) +
+	theme_classic()
+
+p2 <- ggplot() +
+	geom_line(data = milk_ets_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[2]) +
+	geom_ribbon(data = milk_ets_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[2], alpha = 0.5) +
+	scale_x_date() + 
+	scale_y_continuous(limits = c(300, 500)) +
+	theme_classic()
+	
+p3 <- ggplot() +
+	geom_line(data = milk_ets_mmm_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[3]) +
+	geom_ribbon(data = milk_ets_mmm_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[3], alpha = 0.5) +
+	scale_x_date() + 	
+	scale_y_continuous(limits = c(300, 500)) +
+	theme_classic()
+	
+p4 <- ggplot() +
+	geom_line(data = milk_ets_zzz_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[4]) +
+	geom_ribbon(data = milk_ets_zzz_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[4], alpha = 0.5) +
+	scale_x_date() + 
+	scale_y_continuous(limits = c(300, 500)) +
+	theme_classic()
+	
+p5 <- ggplot() +
+	geom_line(data = milk_ets_mmm_damped_fc_df, aes(x = Date, y = Point_Forecast), colour = palette[5]) +
+	geom_ribbon(data = milk_ets_mmm_damped_fc_df, aes(x = Date, ymin = Lo_95, ymax = Hi_95), fill = palette[5], alpha = 0.5) +
+	scale_x_date() + 
+	scale_y_continuous(limits = c(300, 500)) +
+	theme_classic()
+
+multiplot(p1, p2, p3, p4, p5)

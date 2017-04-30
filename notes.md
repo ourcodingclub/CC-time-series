@@ -28,4 +28,6 @@
 
 * Other packages
 	* ggseas
-	* 
+
+## Forecasting
+* What is the difference between ARIMA and Exponential smoothing?
