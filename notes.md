@@ -9,9 +9,9 @@
 * `ts(data_frame)` to create a time series object
 
 ## Plotting time series with ggplot2
-* ggplot() + geom_line() + scale_x_date(format
+* ggplot() + geom_line() + scale_x_date(format = "%Y")
 
-## scales packages
+## scales package
 * Provides functionality for POSIXct and POSIXt classes
 
 ## Decomposition of time series
@@ -31,3 +31,17 @@
 
 ## Forecasting
 * What is the difference between ARIMA and Exponential smoothing?
+	* ARIMA = AutoRegressive Integrated Moving Average
+		* The subset of ETS models which are linear
+		* Accounts for correlations in the data
+		* Good to use when time series is not "stationary" over the course of the time series
+		* Basic notation: ARIMA(p,d,q)
+			* p, d, and q are non-negative integers,
+			* p is the order (number of time lags) of the autoregressive model, 
+			* d is the degree of differencing (the number of times the data have had past values subtracted), and 
+			* q is the order of the moving-average model.
+	* ETS = Error, Trend, Seasonality (Another name for Exponential Smoothing State Space modelling)
+		* A broad group of time series modelling methods 
+	
+* How to choose between ETS types and ARIMA?
+	*  

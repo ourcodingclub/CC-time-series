@@ -195,18 +195,24 @@ milk_arima_fc
 class(milk_arima_fc)
 plot(milk_arima_fc)
 
-# Exponential smoothing
-milk_ets <- ets(milk_ts)
-milk_ets
-typeof(milk_ets)
-class(milk_ets)
-summary(milk_ets)
-plot(milk_ets)
 
-milk_ets_fc <- forecast(milk_ets, h = 50)
+
+# Can also directly forecast() on time series object to auto choose a model and plot
+plot(forecast(milk_ts))  # Chose A,A,A
+
+# Exponential smoothing
+milk_ets_auto <- ets(milk_ts)
+milk_ets_auto
+typeof(milk_ets_auto)
+class(milk_ets_auto)
+summary(milk_ets_auto)
+plot(milk_ets_auto)
+
+milk_ets_fc <- forecast(milk_ets_auto, h = 50)
 milk_ets_fc
 class(milk_ets_fc)
 plot(milk_ets_fc)
+plot(forecast(milk_ets_auto,level=c(50,80,95), fan = TRUE))
 
 milk_ets_mmm <- ets(milk_ts, model = "MMM")
 milk_ets_mmm_fc <- forecast(milk_ets_mmm, h = 50)
@@ -224,7 +230,19 @@ accuracy(milk_ets_mmm_damped_fc)
 plot(simulate(milk_ets_mmm))
 plot(fitted(milk_ets_mmm))
 plot(coef(milk_ets_mmm))
-plot(milk_ets)
+plot(milk_ets_auto)
+
+# Comparing forecasts numerically ----
+AIC(milk_ets_auto)
+AIC(milk_ets_mmm)
+AIC(milk_ets_zzz)
+AIC(milk_ets_mmm_damped)
+
+BIC(milk_ets_auto)
+BIC(milk_ets_mmm)
+BIC(milk_ets_zzz)
+BIC(milk_ets_mmm_damped)
+
 
 # Comparing forecasts with ggplot ----
 
