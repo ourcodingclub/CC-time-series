@@ -158,6 +158,7 @@ ggplot(milk, aes(x = month_time_date, y = milk_prod)) +
 	geom_line() +
 	scale_x_datetime(labels = date_format("%Y-%b"), date_breaks = "6 month")	# Specify the label and breaks for x axis, takes `Date` class only	
 class(milk$month_time_date)
+
 # Decomposition ----
 milk_stl <- stl(milk_ts, s.window = "period")
 milk_decom <- decompose(milk_ts)
@@ -182,48 +183,51 @@ ggplot(milk, aes(x = month_num, y = milk_prod, group = year)) +
 	geom_line(aes(colour = year))
 
 # Forecasting ----
+
+# Create subset of data to create forecast
+milk_model <- window(milk_ts, start=c(1962), end=c(1970))
+milk_test <- window(milk_ts, start=c(1970))
+
 # Arima
-milk_arima <- auto.arima(milk_ts)
+milk_arima <- auto.arima(milk_model)
 milk_arima
 typeof(milk_arima)
 class(milk_arima)
 summary(milk_arima)
 plot(milk_arima)
 
-milk_arima_fc <- forecast(milk_arima, h = 50)
+milk_arima_fc <- forecast(milk_arima, h = 60)
 milk_arima_fc
 class(milk_arima_fc)
 plot(milk_arima_fc)
 
-
-
 # Can also directly forecast() on time series object to auto choose a model and plot
-plot(forecast(milk_ts))  # Chose A,A,A
+plot(forecast(milk_model))  # Chose A,A,A
 
 # Exponential smoothing
-milk_ets_auto <- ets(milk_ts)
+milk_ets_auto <- ets(milk_model)
 milk_ets_auto
 typeof(milk_ets_auto)
 class(milk_ets_auto)
 summary(milk_ets_auto)
 plot(milk_ets_auto)
 
-milk_ets_fc <- forecast(milk_ets_auto, h = 50)
+milk_ets_fc <- forecast(milk_ets_auto, h = 60)
 milk_ets_fc
 class(milk_ets_fc)
 plot(milk_ets_fc)
 plot(forecast(milk_ets_auto,level=c(50,80,95), fan = TRUE))
 
-milk_ets_mmm <- ets(milk_ts, model = "MMM")
-milk_ets_mmm_fc <- forecast(milk_ets_mmm, h = 50)
+milk_ets_mmm <- ets(milk_model, model = "MMM")
+milk_ets_mmm_fc <- forecast(milk_ets_mmm, h = 60)
 plot(milk_ets_mmm_fc)
 
-milk_ets_zzz <- ets(milk_ts, model = "ZZZ")
-milk_ets_zzz_fc <- forecast(milk_ets_zzz, h = 50)
+milk_ets_zzz <- ets(milk_model, model = "ZZZ")
+milk_ets_zzz_fc <- forecast(milk_ets_zzz, h = 60)
 plot(milk_ets_zzz_fc)
 
-milk_ets_mmm_damped <- ets(milk_ts, model = "MMM", damped = TRUE)
-milk_ets_mmm_damped_fc <- forecast(milk_ets_mmm_damped, h = 50)
+milk_ets_mmm_damped <- ets(milk_model, model = "MMM", damped = TRUE)
+milk_ets_mmm_damped_fc <- forecast(milk_ets_mmm_damped, h = 60)
 plot(milk_ets_mmm_damped_fc)
 accuracy(milk_ets_mmm_damped_fc)
 
@@ -233,16 +237,23 @@ plot(coef(milk_ets_mmm))
 plot(milk_ets_auto)
 
 # Comparing forecasts numerically ----
+# AIC value
 AIC(milk_ets_auto)
 AIC(milk_ets_mmm)
 AIC(milk_ets_zzz)
 AIC(milk_ets_mmm_damped)
 
+# BIC value
 BIC(milk_ets_auto)
 BIC(milk_ets_mmm)
 BIC(milk_ets_zzz)
 BIC(milk_ets_mmm_damped)
 
+# Accuracy against test data (milk_test)
+accuracy(milk_ets_fc, milk_test)
+accuracy(milk_ets_mmm_fc, milk_test)
+accuracy(milk_ets_zzz_fc, milk_test)
+accuracy(milk_ets_mmm_damped_fc, milk_test)
 
 # Comparing forecasts with ggplot ----
 
@@ -353,3 +364,10 @@ p5 <- ggplot() +
 	theme_classic()
 
 multiplot(p1, p2, p3, p4, p5)
+
+# Extracting milk production from models
+
+milk_arima_fc_df %>%
+	filter(Month=="Jan 1975") %>%
+	select(Point_Forecast) %>%
+	as.numeric(.)
