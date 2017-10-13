@@ -1,4 +1,4 @@
-Using R for time series analysis
+# Using R for time series analysis
 
 This repository contains the files necessary to complete the Coding Club time series tutorial - you can check it out at:
 https://ourcodingclub.github.io/2017/04/26/time.html
