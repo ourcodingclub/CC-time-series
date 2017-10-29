@@ -43,17 +43,20 @@ class(monthly_milk$good_date)
 # Using scale_x_date
 ggplot(monthly_milk, aes(x = month_date, y = milk_prod_per_cow_kg)) + 
 	geom_line() + 
-	scale_x_date(date_labels = "%Y", date_breaks = "1 year")
+	scale_x_date(date_labels = "%Y", date_breaks = "1 year") + 
+	theme_classic()
 
 # Using scale_x_datetime
 ggplot(daily_milk, aes(x = date_time_posix, y = milk_prod_per_cow_kg)) + 
 	geom_line() + 
-	scale_x_datetime(date_labels = "%p-%d", date_breaks = "36 hour")
+	scale_x_datetime(date_labels = "%p-%d", date_breaks = "36 hour") + 
+	theme_classic()
 
 # Viewing trend using loess smooth
 ggplot(monthly_milk, aes(x = month_date, y = milk_prod_per_cow_kg)) +
 	geom_line() +
-	geom_smooth(method = "loess", se = FALSE, span = 0.6)
+	geom_smooth(method = "loess", se = FALSE, span = 0.6) + 
+	theme_classic()
 
 # Explore seasonal trends ----
 
@@ -63,7 +66,8 @@ monthly_milk$month_num <- format(monthly_milk$month_date, format = "%m")
 
 # Plot months
 ggplot(monthly_milk, aes(x = month_num, y = milk_prod_per_cow_kg, group = year)) + 
-	geom_line(aes(colour = year))
+	geom_line(aes(colour = year)) + 
+	theme_classic()
 
 # Using ts objects to decompose trends ----
 
@@ -123,7 +127,8 @@ forecast_all <- rbind(milk_ets_fc_df, milk_ets_mmm_fc_df, milk_ets_zzz_fc_df, mi
 # Plotting with ggplot
 ggplot() +
 	geom_line(data = monthly_milk, aes(x = month_date, y = milk_prod_per_cow_kg)) +  # Plotting original data
-	geom_line(data = forecast_all, aes(x = Date, y = Point_Forecast, colour = Model))  # Plotting model forecasts
+	geom_line(data = forecast_all, aes(x = Date, y = Point_Forecast, colour = Model)) +  # Plotting model forecasts
+	theme_classic()
 
 # Comparing accuracy of forecasts
 accuracy(milk_ets_fc, monthly_milk_test)
