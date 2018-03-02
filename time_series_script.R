@@ -6,6 +6,7 @@
 library(ggplot2)
 library(forecast)
 library(dplyr)
+library(colortools)
 
 # Set working directory ----
 setwd("~/Downloads/CC-time-series-master")
@@ -20,12 +21,18 @@ class(monthly_milk)
 # Coerce monthly_milk to `Date` class ----
 class(monthly_milk$month)
 monthly_milk$month_date <- as.Date(monthly_milk$month, format = "%Y-%m-%d")
+# Check it worked
 class(monthly_milk$month_date) 
+
+# Experiment with `format()`
+format(monthly_milk$month_date, format = "%Y-%B-%u")
+class(format(monthly_milk$month_date, format = "%Y-%B-%u"))  # class is no longer `Date`
 
 # Coerce daily milk to POSIXct class ----
 head(daily_milk)
 class(daily_milk$date_time)
 daily_milk$date_time_posix <- as.POSIXct(daily_milk$date_time, format = "%Y-%m-%d %H:%M:%S")
+# Check it worked
 class(daily_milk$date_time_posix)
 
 # Create badly formatted dates ----
@@ -64,10 +71,15 @@ ggplot(monthly_milk, aes(x = month_date, y = milk_prod_per_cow_kg)) +
 monthly_milk$year <- format(monthly_milk$month_date, format = "%Y")
 monthly_milk$month_num <- format(monthly_milk$month_date, format = "%m")
 
+# Create a colour palette using the `colortools` package 
+year_pal <- sequential(color = "darkturquoise", percentage = 5, what = "value")
+
 # Plot months
 ggplot(monthly_milk, aes(x = month_num, y = milk_prod_per_cow_kg, group = year)) + 
 	geom_line(aes(colour = year)) + 
-	theme_classic()
+	theme_classic() +
+	scale_color_manual(values = year_pal)
+
 
 # Using ts objects to decompose trends ----
 
